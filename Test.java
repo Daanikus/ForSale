@@ -54,7 +54,7 @@ public class Test {
         
         List<Player> players = new ArrayList<>();
         for(int i = 0; i < 3; i++) {
-            players.add(new Player("N" + ((char) ('A' + i)), s));
+            players.add(new Player("R" + ((char) ('A' + i)), r));
             players.add(new Player("Dan"+ ((char) ('A' + i)), dan));
         }
         GameManager g = new GameManager(players);

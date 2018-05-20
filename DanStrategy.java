@@ -35,6 +35,10 @@ public class DanStrategy implements Strategy {
         int remainingCards = a.getCardsInAuction().size();
         List<Card> sortedCards = sortCards(a.getCardsInAuction());  
 
+        if (p.getCash() == 0) {
+            System.out.println(p.getName() + " is out of money!");
+        }
+
         for (Card c : myCards) if (c.getQuality() <= 8) lowCardsGot++; 
 
         if (lowCardsGot < numLowCardsToGet || highLowSplit(sortedCards)) {
@@ -61,32 +65,47 @@ public class DanStrategy implements Strategy {
         if (worst.getQuality() > 5 && cardsAuctioned < 3) bid += 0;
         else if (best.getQuality() > 15 && best.getQuality() < 20 && cardsAuctioned > 3) bid += 1;
         else if (best.getQuality() > 20 && cardsAuctioned > 3) bid += 2;
-        else if (best.getQuality() > 20) bid += 3;
+        else if (best.getQuality() > 25) bid += 2;
         else bid = 0;
+        //return bid < p.getCash() ? bid : p.getCash() - 3;
         return bid;
     }
 
     @Override
     public Card chooseCard(PlayerRecord p, SaleState s) {
-        Integer best = 0, worst = 99;
-        int average = 0;
-        int averageRemaining = 0;
-        Card c;
-        int cardCount = s.getChequesAvailable().size();
-        for (Integer i : s.getChequesRemaining()) {
-            averageRemaining += i;
+        Integer high = 0, low = 99;
+        List<Integer> cheques = s.getChequesAvailable();
+        for (Integer i : cheques) {
+            if (i > high) high = i;
+            if (i < low) low = i;
         }
-        averageRemaining = averageRemaining / cardCount;
-        for (Integer i : s.getChequesAvailable()) {
-            if (i > best) best = i;
-            if (i < worst) worst = i;
-            average += i;
+        
+        if (high == 15 
+            && haveValue(p.getCards(), 30)
+            && !s.getChequesRemaining().contains(15)) 
+            return getCard(p, 30);
+        if (high == 14 
+            && haveValue(p.getCards(), 29)
+            && !s.getChequesRemaining().contains(14)) 
+            return getCard(p, 29);
+        if (high == 14 
+            && haveValue(p.getCards(), 28)
+            && s.getChequesRemaining().contains(14)) 
+            return getCard(p, 28);
+        if (!s.getChequesRemaining().contains(0) 
+            && high < 10) return getWorst(p);
+        if (high - low < 5 && low > 9) return getBest(p);
+        if (high - low < 5 && low < 7) return getWorst(p);
+
+        return getMedian(p);
+    }
+
+    public Card getCard(PlayerRecord p, int value) {
+        for (Card c : p.getCards()) {
+            if (c.getQuality() == value) return c;
         }
-        average = average / cardCount;
-        if (worst > 5) c = getWorst(p);
-        else if (average > averageRemaining) c = getBest(p);
-        else c = getMedian(p);
-        return c;
+        // Shouldn't happen. Always call have card first.
+        return null;
     }
 
     public Card getWorst(PlayerRecord p) {
@@ -132,10 +151,6 @@ public class DanStrategy implements Strategy {
     public Boolean highLowSplit(List<Card> cards) {
         List<Card> top = cards.subList(cards.size() / 2, cards.size());
         List<Card> bottom = cards.subList(0, cards.size() / 2);
-        System.out.println("High Low split:");
-        for (Card c : cards) {
-            System.out.print(c.getQuality() + ", ");
-        }
         System.out.println();
         for (Card c : bottom) {
             if (c.getQuality() > 8) {
@@ -143,7 +158,7 @@ public class DanStrategy implements Strategy {
             }
         }
         for (Card c : top) {
-            if (c.getQuality() < 12) {
+            if (c.getQuality() < 10) {
                 return false;
             }
         }
@@ -160,6 +175,13 @@ public class DanStrategy implements Strategy {
         }
        
         return result;
+    }
+
+    public Boolean haveValue(List<Card> myCards, int value) {
+        for (Card c : myCards) {
+            if (c.getQuality() == value) return true;
+        }
+        return false;
     }
 
 }
