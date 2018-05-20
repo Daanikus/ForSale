@@ -5,7 +5,7 @@
  */
 package forsale;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Comparator;
 import java.util.Collections;
 
@@ -25,7 +25,8 @@ public class DanStrategy implements Strategy {
     @Override
     public int bid(PlayerRecord p, AuctionState a) {
         int bid = a.getCurrentBid();
-        Card best = 0, worst = 99;
+        Card best = a.getCardsInAuction().get(0);
+        Card worst =a.getCardsInAuction().get(1);
         for (Card c : a.getCardsInAuction()) {
             if (c.getQuality() > best.getQuality()) best = c;
             if (c.getQuality() < worst.getQuality()) worst = c;
@@ -63,7 +64,7 @@ public class DanStrategy implements Strategy {
 
     public Card getWorst(PlayerRecord p) {
         int value = 99;
-        Card worst;
+        Card worst = null;
         for (Card c : p.getCards()) {
             if (c.getQuality() < value) {
                 value = c.getQuality();
@@ -75,7 +76,7 @@ public class DanStrategy implements Strategy {
 
     public Card getBest(PlayerRecord p) {
         int value = 0;
-        Card best;
+        Card best = null;
         for (Card c : p.getCards()) {
             if (c.getQuality() > value) {
                 value = c.getQuality();
@@ -86,7 +87,7 @@ public class DanStrategy implements Strategy {
     }
 
     public Card getAvg(PlayerRecord p) {
-        ArrayList<Card> cards = p.getCards();
+        List<Card> cards = p.getCards();
         Collections.sort(cards, new Comparator<Card>() {
                 @Override
                 public int compare(Card o1, Card o2) {
