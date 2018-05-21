@@ -24,19 +24,46 @@ public class DanStrategy implements Strategy {
 
     @Override
     public int bid(PlayerRecord p, AuctionState a) {
+        Boolean firstToBid = a.getCurrentBid() == 0;
+        Boolean highLow;
+        int numPlayers = a.getPlayers().size();
+        int round = a.getCardsInDeck().size() / numPlayers;
         int bid = a.getCurrentBid();
+        int numLowCardsToGet = 6 % numPlayers;
+        List<Card> myCards = p.getCards();
+        int lowCardsGot = lowCardCount(myCards);
+        int remainingCards = a.getCardsInAuction().size();
+        List<Card> sortedCards = sortCards(a.getCardsInAuction());  
+
+        for (Card c : myCards) if (c.getQuality() <= 8) lowCardsGot++; 
+
+        if (lowCardsGot < numLowCardsToGet || highLowSplit(sortedCards)) {
+            return bid + 1;
+        }
+        // We won last round, so bid first
+        if (firstToBid) {
+            return bid + 1;
+        }
         Card best = a.getCardsInAuction().get(0);
-        Card worst =a.getCardsInAuction().get(1);
+        Card worst = a.getCardsInAuction().get(1);
         for (Card c : a.getCardsInAuction()) {
             if (c.getQuality() > best.getQuality()) best = c;
             if (c.getQuality() < worst.getQuality()) worst = c;
             
         }
+
+        if (best.getQuality() < 10) {
+            bid = bid < 2 ? bid++ : 2;
+        }
+
+
+
         if (worst.getQuality() > 5 && cardsAuctioned < 3) bid += 0;
-        else if (best.getQuality() > 15 && cardsAuctioned > 3) bid += 1;
+        else if (best.getQuality() > 15 && best.getQuality() < 20 && cardsAuctioned > 3) bid += 1;
         else if (best.getQuality() > 20 && cardsAuctioned > 3) bid += 2;
+        else if (best.getQuality() > 20) bid += 3;
         else bid = 0;
-        return bid > 6 ? 6 : bid;
+        return bid;
     }
 
     @Override
@@ -58,7 +85,7 @@ public class DanStrategy implements Strategy {
         average = average / cardCount;
         if (worst > 5) c = getWorst(p);
         else if (average > averageRemaining) c = getBest(p);
-        else c = getAvg(p);
+        else c = getMedian(p);
         return c;
     }
 
@@ -86,15 +113,53 @@ public class DanStrategy implements Strategy {
         return best;
     }
 
-    public Card getAvg(PlayerRecord p) {
+    public Card getMedian(PlayerRecord p) {
         List<Card> cards = p.getCards();
-        Collections.sort(cards, new Comparator<Card>() {
-                @Override
-                public int compare(Card o1, Card o2) {
-                    return o2.getQuality() - o1.getQuality();
-                }
-            });
+        cards = sortCards(cards);
         return cards.get(cards.size()/2);
+    }
+
+    public List<Card> sortCards(List<Card> cards) {
+        Collections.sort(cards, new Comparator<Card>() {
+            @Override
+            public int compare(Card o1, Card o2) {
+                return o2.getQuality() - o1.getQuality();
+            }
+        });
+        return cards;
+    }
+
+    public Boolean highLowSplit(List<Card> cards) {
+        List<Card> top = cards.subList(cards.size() / 2, cards.size());
+        List<Card> bottom = cards.subList(0, cards.size() / 2);
+        System.out.println("High Low split:");
+        for (Card c : cards) {
+            System.out.print(c.getQuality() + ", ");
+        }
+        System.out.println();
+        for (Card c : bottom) {
+            if (c.getQuality() > 8) {
+                return false;
+            }
+        }
+        for (Card c : top) {
+            if (c.getQuality() < 12) {
+                return false;
+            }
+        }
+        System.out.println("Split true");
+        return true;
+    }
+
+    public int lowCardCount(List<Card> myCards) {
+        int result = 0;
+        for (Card c : myCards) {
+            if (c.getQuality() <= 8) {
+                result++;
+            }
+        }
+       
+        return result;
     }
 
 }
